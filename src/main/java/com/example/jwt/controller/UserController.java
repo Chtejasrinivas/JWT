@@ -1,9 +1,12 @@
 package com.example.jwt.controller;
 
 import com.example.jwt.model.User;
+import com.example.jwt.service.JwtService;
 import com.example.jwt.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,20 +22,28 @@ public class UserController {
 
     private final UserService userService;
 
+
+    private final AuthenticationManager authenticationManager;
+
+    private final JwtService jwtService;
+
     @PostMapping("login")
-    @PreAuthorize("hasAnyRole('ADMIN','USER','SUPER_ADMIN')")
-    public String loginUser() {
-        return "User logged in successfully!";
+    public String loginUser(@RequestBody User user) {
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword()));
+        if (authentication.isAuthenticated()) {
+            return jwtService.generateToken(user.getUserName());
+        } else {
+            return "Login failed!";
+        }
     }
 
     @PostMapping("register")
-    @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public User registerUser(@RequestBody User user) {
         return userService.addUser(user);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER','SUPER_ADMIN')")
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }

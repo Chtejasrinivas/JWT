@@ -1,11 +1,15 @@
 package com.example.jwt.config;
 
+import com.example.jwt.filters.JwtFilter;
+import jakarta.servlet.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,6 +17,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +31,10 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
+
+    @Autowired
+    private JwtFilter jwtFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity security) {
 
@@ -34,10 +43,14 @@ public class SecurityConfig {
         security.csrf(csrf -> csrf.disable());
 
         // here we are telling spring that all the request should be authenticated
-        security.authorizeHttpRequests(requests -> requests.anyRequest().authenticated());
+        security.authorizeHttpRequests(
+            requests -> requests.requestMatchers("/user/login", "/user/register").permitAll()
+                .anyRequest().authenticated());
 
         // here we are telling spring to use the basic authentication for the authentication process
-        security.httpBasic(Customizer.withDefaults());
+//        security.httpBasic(Customizer.withDefaults());
+
+        // since we are doing the JWT based authentication we don't need the basic authentication so we are disabling it
 
         /**
          * here we are telling spring to use the stateless session management policy,
@@ -47,6 +60,10 @@ public class SecurityConfig {
          * open the home page and do refresh everytime you will get a new session id.
          **/
         security.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        // here we are telling spring to use the jwt filter before the username password authentication filter
+        security.addFilterBefore((Filter) jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return security.build();
     }
 
@@ -64,25 +81,9 @@ public class SecurityConfig {
         return authenticationProvider;
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+        return config.getAuthenticationManager();
+    }
 
-    // here we are creating an in memory user details service and adding two users to it one with the role of USER
-    // and another with the role of ADMIN
-    // we will take this to next level by having users in the database
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//
-//        UserDetails user = User
-//            .withUsername("teja")
-//            .password(passwordEncoder().encode("t@123"))
-//            .roles("USER")
-//            .build();
-//
-//        UserDetails admin = User
-//            .withUsername("admin")
-//            .password(passwordEncoder().encode("a@123"))
-//            .roles("ADMIN")
-//            .build();
-//
-//        return new InMemoryUserDetailsManager(user,admin);
-//    }
 }
