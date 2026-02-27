@@ -1,5 +1,6 @@
 package com.example.jwt.controller;
 
+import com.example.jwt.model.LoginResponse;
 import com.example.jwt.model.User;
 import com.example.jwt.service.JwtService;
 import com.example.jwt.service.UserService;
@@ -28,13 +29,13 @@ public class UserController {
     private final JwtService jwtService;
 
     @PostMapping("login")
-    public String loginUser(@RequestBody User user) {
+    public LoginResponse loginUser(@RequestBody User user) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(user.getUserName(), user.getPassword()));
         if (authentication.isAuthenticated()) {
-            return jwtService.generateToken(user.getUserName());
+            return jwtService.generateTokens(user.getUserName());
         } else {
-            return "Login failed!";
+            return new LoginResponse(null,null,0);
         }
     }
 

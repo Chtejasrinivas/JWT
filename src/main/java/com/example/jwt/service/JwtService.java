@@ -1,5 +1,6 @@
 package com.example.jwt.service;
 
+import com.example.jwt.model.LoginResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -28,7 +29,17 @@ public class JwtService {
         this.secretKey = generateSecretKey();
     }
 
-    public String generateToken(String username) {
+
+    public LoginResponse generateTokens(String userName) {
+        return LoginResponse.builder()
+            .accessToken(generateAccessToken(userName))
+            .refreshToken(generateRefreshToken(userName))
+            .refreshTokenInMinutes(60)
+            .build();
+    }
+
+    // Generating the token
+    public String generateAccessToken(String username) {
 
         Map<String, Object> claims = new HashMap<>();
 
@@ -58,6 +69,8 @@ public class JwtService {
         }
     }
 
+
+    // validating the token
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
         final Claims claims = extractAllClaims(token);
         return claimResolver.apply(claims);
@@ -85,5 +98,21 @@ public class JwtService {
 
     private Date expiryDate(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    // Give the refresh token
+    public String generateRefreshToken(String username) {
+
+        // generating another token called refresh token setting the validity to 1 hour
+
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("username", username);
+
+        return Jwts.builder().setClaims(claims).setSubject(username)
+            .setIssuedAt(new Date(System.currentTimeMillis()))
+            .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+            .signWith(getKey(), SignatureAlgorithm.HS256).compact();
+
     }
 }
