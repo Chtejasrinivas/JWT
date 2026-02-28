@@ -65,8 +65,6 @@ public class SecurityConfig {
         // here we are telling spring to use the jwt filter before the username password authentication filter
         security.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-        security.oauth2Login(Customizer.withDefaults());
-
         return security.build();
     }
 
