@@ -23,6 +23,10 @@ import java.util.function.Function;
 @Slf4j
 public class JwtService {
 
+    private final int ACCESS_TOKEN_EXPIRY_IN_MINUTES = 1000 * 60 * 2;
+
+    private final int REFRESH_TOKEN_EXPIRY_IN_MINUTES = 1000 * 60 * 5;
+
     private final String secretKey;
 
     public JwtService() {
@@ -31,11 +35,13 @@ public class JwtService {
 
 
     public LoginResponse generateTokens(String userName) {
-        return LoginResponse.builder()
-            .accessToken(generateAccessToken(userName))
-            .refreshToken(generateRefreshToken(userName))
-            .refreshTokenInMinutes(60)
-            .build();
+        return LoginResponse.builder().accessToken(generateAccessToken(userName))
+            .refreshToken(generateRefreshToken(userName)).refreshTokenInMinutes(60).build();
+    }
+
+    public LoginResponse generateTokens(String userName, String refreshToken) {
+        return LoginResponse.builder().accessToken(generateAccessToken(userName))
+            .refreshToken(refreshToken).refreshTokenInMinutes(60).build();
     }
 
     // Generating the token
@@ -47,7 +53,7 @@ public class JwtService {
 
         return Jwts.builder().setClaims(claims).setSubject(username)
             .setIssuedAt(new Date(System.currentTimeMillis()))
-            .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 3))
+            .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRY_IN_MINUTES))
             .signWith(getKey(), SignatureAlgorithm.HS256).compact();
 
     }
@@ -111,8 +117,12 @@ public class JwtService {
 
         return Jwts.builder().setClaims(claims).setSubject(username)
             .setIssuedAt(new Date(System.currentTimeMillis()))
-            .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+            .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRY_IN_MINUTES))
             .signWith(getKey(), SignatureAlgorithm.HS256).compact();
 
+    }
+
+    public boolean validateRefreshToken(String refreshToken, UserDetails userDetails) {
+        return validateToken(refreshToken, userDetails);
     }
 }

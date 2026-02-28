@@ -44,7 +44,8 @@ public class SecurityConfig {
 
         // here we are telling spring that all the request should be authenticated
         security.authorizeHttpRequests(
-            requests -> requests.requestMatchers("/user/login", "/user/register").permitAll()
+            requests -> requests.requestMatchers("/user/login", "/user/register", "/user/refresh-token")
+                .permitAll()
                 .anyRequest().authenticated());
 
         // here we are telling spring to use the basic authentication for the authentication process
